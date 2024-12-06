@@ -12,7 +12,7 @@ setup(
 
     author_email = 'kbk8vh@virginia.edu',
 
-    url = '',
+    url = 'https://github.com/katherinekelleher/DS5100-Final-Project/blob/1f5e8e1c004eee99ddf670655bfa51f17913c284/setup.py',
 
     license = 'MIT',
 
