@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+
 class Die():
     "Takes a NumPy array of faces and creates a die of N sides and W weights. Weights default to 1 for each side but can be updated."   
     def __init__(self, array_faces):
@@ -29,15 +30,13 @@ class Die():
                     self.weight_value = float(self.weight_value)
                 except ValueError:
                     raise TypeError("Input weight value must be of type int, float, or coercible.")
-        if face_value not in self.die.index:
+        if face_value not in self.die.index.values:
             raise TypeError("Input face value must be within die array.")
         else: 
-            new_side = pd.DataFrame({'side': [self.face_value], 'weights': [self.weight_value]})
-            new_side['weights'] = new_side['weights'].astype('Int64')
-            self.die = pd.concat([self.die, new_side], ignore_index=True)
+            self.die.loc[self.face_value, 'weights'] = self.weight_value
 
     def roll_dice(self, n_rolls=1):
-    "Rolling die objects one or more times. Input is integer number of dice rolls and is initialized to 1, but can be changed. Creates series of rolls and values for all die objects."
+        "Rolling die objects one or more times. Input is integer number of dice rolls and is initialized to 1, but can be changed. Creates series of rolls and values for all die objects."
         results = []
         for i in range(n_rolls):
             result = self.die.sample(weights=self.die.weights).index[0]
@@ -47,7 +46,7 @@ class Die():
 class Game():
     "A game consists of rolling of one or more similar dice (Die objects) one or more times."
     def __init__(self, dice_list):
-    "Initalize the object by a list of die objects."
+        "Initalize the object by a list of die objects."
         self.dice_list = dice_list
         
     def play(self, n_rolls):
@@ -83,16 +82,14 @@ class Analyzer():
     def jackpot(self):
         "Identify any jackpot results in die game."
         self.jackpot_columns = 0
-        self.game.play(n_rolls)
         self.df = self.game.return_play_df("wide")
-        for col in self.df.columns:
-            if self.df[col].nunique() == 1:
-                self.jackpot_columns += 1
-            return self.jackpot_columns
+        same_values = self.df.apply(lambda row: row.nunique() == 1, axis=1)
+        self.result_df = self.df[same_values]
+
+        return len(self.result_df)
         
     def face_counts(self):
         "Computes how many times a given face is rolled in each event."
-        self.game.play(n_rolls)
         self.df = self.game.return_play_df("wide")
         self.face_count_df = self.df.apply(lambda x: x.value_counts(), axis =1)
         return self.face_count_df
@@ -101,11 +98,11 @@ class Analyzer():
         "Computes the distinct combinations of faces rolled, along with their counts. Transforms Analyzer object's return_play_df('wide')."
         self.df_combo = self.game.return_play_df("wide")
         roll_sorted = self.df_combo.apply(lambda x:tuple(sorted(x)), axis =1)
-        distinct_combinations_df = roll_sorted.value_counts(dropna=False).reset_index(name='count')
+        distinct_combinations_df = roll_sorted.value_counts().reset_index(name='count')
         return distinct_combinations_df
     
     def perm_count(self):
         "Computes the distinct permutations of faces rolled, along with their counts. Transforms Analyzer object's return_play_df('wide')."
         self.df_perm = self.game.return_play_df("wide")
-        distinct_permutations_df = self.df_perm.value_counts(dropna=False).reset_index(name='count')
+        distinct_permutations_df = self.df_perm.value_counts().reset_index(name='count')
         return distinct_permutations_df
